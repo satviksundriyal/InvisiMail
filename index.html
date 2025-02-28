@@ -15,6 +15,10 @@
       --muted: #a0a0a0;
       --input-border: #333;
       --hover-surface: #2a2a2a;
+      /* Loader colors for dark theme */
+      --loader-color-top: #fff;
+      --loader-color-left: #fff;
+      --loader-color-right: #ff00;
     }
 
     /* Light mode overrides */
@@ -25,6 +29,10 @@
       --muted: #6b7280;
       --input-border: #e5e7eb;
       --hover-surface: #f8fafc;
+      /* Loader colors for light theme */
+      --loader-color-top: #111827;
+      --loader-color-left: #111827;
+      --loader-color-right: #2563eb;
     }
 
     body {
@@ -196,15 +204,15 @@
       border-radius: 4px;
     }
 
-    /* From Uiverse.io by JesusRafaelNavaCruz */
+    /* Loader styling using CSS variables for colors */
     .loader {
       width: 4rem;
       height: 4rem;
       border-radius: 50%;
       box-sizing: border-box;
-      border-top: 8px solid #fff;
-      border-left: 8px solid #fff;
-      border-right: 8px solid #ff00;
+      border-top: 8px solid var(--loader-color-top);
+      border-left: 8px solid var(--loader-color-left);
+      border-right: 8px solid var(--loader-color-right);
       animation: loader 0.7s infinite linear;
       margin: 1rem auto;
     }
@@ -376,14 +384,14 @@
         .catch(err => alert("Failed to copy email: " + err));
     }
 
-    // Auto-refresh functionality (updated from 10 sec to 20 sec)
+    // Auto-refresh functionality (updated to 20 seconds)
     let refreshInterval;
     function startAutoRefresh() {
       if (refreshInterval) clearInterval(refreshInterval);
       refreshInterval = setInterval(refreshEmails, 20000);
     }
 
-    // Close modal when clicking outside the content
+    // Close modal when clicking outside its content
     document.getElementById('emailModal').addEventListener('click', (e) => {
       if (e.target === document.getElementById('emailModal')) {
         document.getElementById('emailModal').style.display = 'none';
