@@ -222,6 +222,50 @@
         transform: rotate(360deg);
       }
     }
+
+    /* Responsive Styles */
+    @media (max-width: 768px) {
+      body {
+        padding: 1rem;
+      }
+      .controls {
+        flex-direction: column;
+        gap: 0.5rem;
+        padding: 1rem;
+      }
+      #emailInput {
+        font-size: 0.9rem;
+        padding: 0.75rem;
+      }
+      button {
+        padding: 0.75rem 1rem;
+        font-size: 0.9rem;
+      }
+      .email-item {
+        grid-template-columns: 1fr;
+      }
+      .modal-content {
+        width: 95%;
+        max-width: 95%;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .logo {
+        font-size: 2rem;
+      }
+      .controls {
+        padding: 0.75rem;
+      }
+      #emailInput {
+        padding: 0.5rem;
+        font-size: 0.8rem;
+      }
+      button {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.8rem;
+      }
+    }
   </style>
 </head>
 <body>
@@ -388,14 +432,11 @@
       }
     }
 
-    // Attach event listeners after DOM loads
     window.addEventListener('DOMContentLoaded', () => {
       document.getElementById('themeToggle').addEventListener('click', toggleTheme);
       document.getElementById('newAddress').addEventListener('click', generateEmail);
       document.getElementById('refreshEmails').addEventListener('click', refreshEmails);
       document.getElementById('copyEmail').addEventListener('click', copyEmail);
-
-      // Load saved inbox data
       const savedInbox = localStorage.getItem('mailslurpInbox');
       if (savedInbox) {
         const inbox = JSON.parse(savedInbox);
@@ -407,8 +448,6 @@
       if (localStorage.getItem('theme') === 'light') {
         document.body.classList.add('light-mode');
       }
-
-      // Close modal if clicking outside its content
       document.getElementById('emailModal').addEventListener('click', (e) => {
         if (e.target === document.getElementById('emailModal')) {
           document.getElementById('emailModal').style.display = 'none';
