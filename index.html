@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>DisposiMail - Temporary Email</title>
+  <title>InvisiMail - Temporary Email</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   <style>
     :root {
@@ -185,6 +185,17 @@
       box-shadow: 0 4px 6px rgba(0, 0, 0, 0.6);
     }
 
+    /* Back button styling for email modal */
+    .back-button {
+      background: var(--secondary);
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      margin-bottom: 1rem;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+
     /* From Uiverse.io by JesusRafaelNavaCruz */
     .loader {
       width: 4rem;
@@ -208,7 +219,7 @@
 <body>
   <div class="container">
     <header>
-      <div class="logo">DisposiMail</div>
+      <div class="logo">InvisiMail</div>
       <p>Temporary Email Service powered by MailSlurp</p>
       <button class="theme-toggle" onclick="toggleTheme()">
         <i class="fas fa-adjust"></i> Toggle Theme
@@ -266,18 +277,31 @@
     async function refreshEmails() {
       if (!currentInboxId) return;
 
-      try {
-        const response = await fetch(`https://api.mailslurp.com/inboxes/${currentInboxId}/emails`, {
-          headers: {
-            'x-api-key': API_KEY
-          }
-        });
-        
-        const emails = await response.json();
-        renderEmails(emails);
-      } catch (error) {
-        alert('Error fetching emails: ' + error.message);
-      }
+      // Show loader immediately in the email list
+      const emailList = document.getElementById('emailList');
+      emailList.innerHTML = `
+        <div style="padding: 2rem; text-align: center; color: var(--muted);">
+          <i class="fas fa-inbox fa-2x"></i>
+          <p>Loading emails...</p>
+          <div class="loader"></div>
+        </div>
+      `;
+
+      // Wait 2 seconds before fetching emails
+      setTimeout(async () => {
+        try {
+          const response = await fetch(\`https://api.mailslurp.com/inboxes/\${currentInboxId}/emails\`, {
+            headers: {
+              'x-api-key': API_KEY
+            }
+          });
+          
+          const emails = await response.json();
+          renderEmails(emails);
+        } catch (error) {
+          alert('Error fetching emails: ' + error.message);
+        }
+      }, 2000); // 2000 milliseconds = 2 seconds
     }
 
     function renderEmails(emails) {
@@ -313,7 +337,7 @@
       document.getElementById('modalContent').innerHTML = '<div class="loader"></div>';
       document.getElementById('emailModal').style.display = 'flex';
       try {
-        const response = await fetch(`https://api.mailslurp.com/emails/${emailId}`, {
+        const response = await fetch(\`https://api.mailslurp.com/emails/\${emailId}\`, {
           headers: {
             'x-api-key': API_KEY
           }
@@ -323,6 +347,7 @@
         const cleanBody = DOMPurify.sanitize(email.body || 'No content available');
         
         document.getElementById('modalContent').innerHTML = `
+          <button class="back-button" id="backButton">Back</button>
           <h2 style="margin-bottom: 1rem;">${email.subject}</h2>
           <div style="margin-bottom: 1rem;">
             <strong>From:</strong> ${email.from}<br>
@@ -331,6 +356,10 @@
           <hr>
           <div>${cleanBody}</div>
         `;
+        // Attach event listener to the Back button to close the modal
+        document.getElementById('backButton').addEventListener('click', () => {
+          document.getElementById('emailModal').style.display = 'none';
+        });
       } catch (error) {
         alert('Error loading email: ' + error.message);
       }
@@ -347,11 +376,11 @@
         .catch(err => alert("Failed to copy email: " + err));
     }
 
-    // Auto-refresh functionality
+    // Auto-refresh functionality (updated from 10 sec to 20 sec)
     let refreshInterval;
     function startAutoRefresh() {
       if (refreshInterval) clearInterval(refreshInterval);
-      refreshInterval = setInterval(refreshEmails, 10000);
+      refreshInterval = setInterval(refreshEmails, 20000);
     }
 
     // Close modal when clicking outside the content
