@@ -229,20 +229,20 @@
     <header>
       <div class="logo">InvisiMail</div>
       <p>Temporary Email Service powered by MailSlurp</p>
-      <button class="theme-toggle" onclick="toggleTheme()">
+      <button id="themeToggle" class="theme-toggle">
         <i class="fas fa-adjust"></i> Toggle Theme
       </button>
     </header>
 
     <div class="controls">
       <input type="text" id="emailInput" readonly placeholder="Generate email to begin" />
-      <button class="primary-btn" onclick="generateEmail()">
+      <button id="newAddress" class="primary-btn">
         <i class="fas fa-plus"></i> New Address
       </button>
-      <button class="secondary-btn" onclick="refreshEmails()">
+      <button id="refreshEmails" class="secondary-btn">
         <i class="fas fa-sync"></i> Refresh
       </button>
-      <button class="secondary-btn" onclick="copyEmail()">
+      <button id="copyEmail" class="secondary-btn">
         <i class="fas fa-copy"></i> Copy Email
       </button>
     </div>
@@ -260,6 +260,7 @@
   <script>
     const API_KEY = 'b84ed0287377ddebeb80447f5437bf6f25714dd3a4484ba0f9bed1de2710aead'; // Replace with your API key
     let currentInboxId = null;
+    let refreshInterval;
 
     async function generateEmail() {
       try {
@@ -270,7 +271,6 @@
             'x-api-key': API_KEY
           }
         });
-        
         const data = await response.json();
         currentInboxId = data.id;
         document.getElementById('emailInput').value = data.emailAddress;
@@ -284,8 +284,6 @@
 
     async function refreshEmails() {
       if (!currentInboxId) return;
-
-      // Show loader immediately in the email list
       const emailList = document.getElementById('emailList');
       emailList.innerHTML = `
         <div style="padding: 2rem; text-align: center; color: var(--muted);">
@@ -294,28 +292,25 @@
           <div class="loader"></div>
         </div>
       `;
-
       // Wait 2 seconds before fetching emails
       setTimeout(async () => {
         try {
-          const response = await fetch(\`https://api.mailslurp.com/inboxes/\${currentInboxId}/emails\`, {
+          const response = await fetch(`https://api.mailslurp.com/inboxes/${currentInboxId}/emails`, {
             headers: {
               'x-api-key': API_KEY
             }
           });
-          
           const emails = await response.json();
           renderEmails(emails);
         } catch (error) {
           alert('Error fetching emails: ' + error.message);
         }
-      }, 2000); // 2000 milliseconds = 2 seconds
+      }, 2000);
     }
 
     function renderEmails(emails) {
       const emailList = document.getElementById('emailList');
       emailList.innerHTML = '';
-
       if (emails.length === 0) {
         emailList.innerHTML = `
           <div style="padding: 2rem; text-align: center; color: var(--muted);">
@@ -326,7 +321,6 @@
         `;
         return;
       }
-
       emails.forEach(email => {
         const emailElement = document.createElement('div');
         emailElement.className = 'email-item';
@@ -341,19 +335,16 @@
     }
 
     async function showEmailContent(emailId) {
-      // Display loader in modal until content loads
       document.getElementById('modalContent').innerHTML = '<div class="loader"></div>';
       document.getElementById('emailModal').style.display = 'flex';
       try {
-        const response = await fetch(\`https://api.mailslurp.com/emails/\${emailId}\`, {
+        const response = await fetch(`https://api.mailslurp.com/emails/${emailId}`, {
           headers: {
             'x-api-key': API_KEY
           }
         });
-        
         const email = await response.json();
         const cleanBody = DOMPurify.sanitize(email.body || 'No content available');
-        
         document.getElementById('modalContent').innerHTML = `
           <button class="back-button" id="backButton">Back</button>
           <h2 style="margin-bottom: 1rem;">${email.subject}</h2>
@@ -364,7 +355,6 @@
           <hr>
           <div>${cleanBody}</div>
         `;
-        // Attach event listener to the Back button to close the modal
         document.getElementById('backButton').addEventListener('click', () => {
           document.getElementById('emailModal').style.display = 'none';
         });
@@ -384,24 +374,13 @@
         .catch(err => alert("Failed to copy email: " + err));
     }
 
-    // Auto-refresh functionality (updated to 20 seconds)
-    let refreshInterval;
     function startAutoRefresh() {
       if (refreshInterval) clearInterval(refreshInterval);
-      refreshInterval = setInterval(refreshEmails, 20000);
+      refreshInterval = setInterval(refreshEmails, 20000); // Auto-refresh every 20 seconds
     }
 
-    // Close modal when clicking outside its content
-    document.getElementById('emailModal').addEventListener('click', (e) => {
-      if (e.target === document.getElementById('emailModal')) {
-        document.getElementById('emailModal').style.display = 'none';
-      }
-    });
-
-    // Light/Dark mode toggle
     function toggleTheme() {
       document.body.classList.toggle('light-mode');
-      // Save preference to localStorage
       if (document.body.classList.contains('light-mode')) {
         localStorage.setItem('theme', 'light');
       } else {
@@ -409,8 +388,14 @@
       }
     }
 
-    // Set initial theme and load inbox on page load
-    window.onload = () => {
+    // Attach event listeners after DOM loads
+    window.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('themeToggle').addEventListener('click', toggleTheme);
+      document.getElementById('newAddress').addEventListener('click', generateEmail);
+      document.getElementById('refreshEmails').addEventListener('click', refreshEmails);
+      document.getElementById('copyEmail').addEventListener('click', copyEmail);
+
+      // Load saved inbox data
       const savedInbox = localStorage.getItem('mailslurpInbox');
       if (savedInbox) {
         const inbox = JSON.parse(savedInbox);
@@ -422,7 +407,14 @@
       if (localStorage.getItem('theme') === 'light') {
         document.body.classList.add('light-mode');
       }
-    };
+
+      // Close modal if clicking outside its content
+      document.getElementById('emailModal').addEventListener('click', (e) => {
+        if (e.target === document.getElementById('emailModal')) {
+          document.getElementById('emailModal').style.display = 'none';
+        }
+      });
+    });
   </script>
 </body>
 </html>
