@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>InvisiMail</title>
+    <title>TempMail - Disposable Email Service</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root {
@@ -166,7 +166,7 @@
 <body>
     <div class="container">
         <header class="header">
-            <h1>InvisiMail</h1>
+            <h1>TempMail</h1>
             <p>Disposable Temporary Email Service</p>
         </header>
 
@@ -177,7 +177,7 @@
                     <i class="fas fa-plus"></i>
                     Generate
                 </button>
-                <button class="btn btn-secondary" onclick="loadEmails()">
+                <button class="btn btn-secondary" id="refreshButton">
                     <i class="fas fa-sync"></i>
                     Refresh
                 </button>
@@ -196,14 +196,20 @@
     <script>
         let currentToken = localStorage.getItem('emailToken') || '';
         let currentEmail = localStorage.getItem('currentEmail') || '';
+        let isLoading = false;
 
         async function generateEmail() {
             try {
-                const response = await fetch('https://api.tempmail.lol/v1/new');
+                const response = await fetch('https://api.tempmail.lol/generate');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
                 const data = await response.json();
-                
+                if (!data.address || !data.token) {
+                    throw new Error('Invalid response from API');
+                }
                 currentToken = data.token;
-                currentEmail = data.email;
+                currentEmail = data.address;
                 
                 localStorage.setItem('emailToken', currentToken);
                 localStorage.setItem('currentEmail', currentEmail);
@@ -211,20 +217,27 @@
                 document.getElementById('emailAddress').value = currentEmail;
                 loadEmails();
             } catch (error) {
-                alert('Error generating email');
+                alert('Error generating email: ' + error.message);
             }
         }
 
         async function loadEmails() {
-            if (!currentToken) return;
-
+            if (isLoading) return;
+            isLoading = true;
+            if (!currentToken) {
+                isLoading = false;
+                return;
+            }
             try {
-                const response = await fetch(`https://api.tempmail.lol/v1/messages?token=${currentToken}`);
+                const response = await fetch(`https://api.tempmail.lol/messages?token=${currentToken}`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
                 const emails = await response.json();
                 
                 const emailList = document.getElementById('emailList');
                 emailList.innerHTML = '';
-
+                
                 if (emails.length === 0) {
                     emailList.innerHTML = `
                         <div class="empty-state">
@@ -234,7 +247,7 @@
                     `;
                     return;
                 }
-
+                
                 emails.forEach(email => {
                     const emailElement = document.createElement('div');
                     emailElement.className = 'email-item';
@@ -247,7 +260,9 @@
                     emailList.appendChild(emailElement);
                 });
             } catch (error) {
-                alert('Error loading emails');
+                alert('Error loading emails: ' + error.message);
+            } finally {
+                isLoading = false;
             }
         }
 
@@ -277,6 +292,28 @@
                 </html>
             `);
         }
+
+        // UI improvements for refresh button with circular movement
+        const refreshButton = document.getElementById('refreshButton');
+        refreshButton.addEventListener('click', function() {
+            if (isLoading) return;
+            refreshButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Refreshing...';
+            refreshButton.setAttribute('disabled', 'disabled');
+            loadEmails().then(() => {
+                refreshButton.removeAttribute('disabled');
+                refreshButton.innerHTML = '<i class="fas fa-sync"></i> Refresh';
+            }).catch(() => {
+                refreshButton.removeAttribute('disabled');
+                refreshButton.innerHTML = '<i class="fas fa-sync"></i> Refresh';
+            });
+        });
+
+        // Automatic refresh every 10 seconds
+        setInterval(() => {
+            if (currentToken && !isLoading) {
+                loadEmails();
+            }
+        }, 10000);
 
         // Initial load
         if (currentEmail) {
